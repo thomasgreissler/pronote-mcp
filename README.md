@@ -1,6 +1,6 @@
 # pronote-mcp
 
-Serveur MCP (Model Context Protocol) qui connecte Claude Desktop à **Pronote** via l'ENT Monlycée Île-de-France.
+Serveur qui connecte Claude Desktop à **Pronote** via l'ENT Monlycée Île-de-France.
 
 ## Fonctionnalités
 
@@ -37,7 +37,7 @@ pip install -e .
 
 ## Configuration
 
-Copiez `.env.example` vers `.env` et renseignez les variables :
+
 
 ```env
 MONLYCEE_USER=prenom.nom@lycee.fr
@@ -45,13 +45,13 @@ MONLYCEE_PASS=votre_mot_de_passe
 PRONOTE_URL=https://XXXXX.index-education.net/pronote/eleve.html
 ```
 
-Ne committez jamais ce fichier `.env`.
+
 
 ## Utilisation
 
 ### Mode stdio (Claude Desktop)
 
-Ajoutez dans la configuration de Claude Desktop (`claude_desktop_config.json`) :
+conf: (`claude_desktop_config.json`) :
 
 ```json
 {
@@ -60,7 +60,7 @@ Ajoutez dans la configuration de Claude Desktop (`claude_desktop_config.json`) :
       "command": "pronote-mcp",
       "env": {
         "MONLYCEE_USER": "prenom.nom@lycee.fr",
-        "MONLYCEE_PASS": "votre_mot_de_passe",
+        "MONLYCEE_PASS": "mdp",
         "PRONOTE_URL": "https://XXXXX.index-education.net/pronote/eleve.html"
       }
     }
@@ -68,14 +68,14 @@ Ajoutez dans la configuration de Claude Desktop (`claude_desktop_config.json`) :
 }
 ```
 
-### Mode HTTP (auto-hébergement)
+### Mode HTTP (APHA)
 
 ```bash
 MCP_AUTH_TOKEN=$(python -c "import secrets; print(secrets.token_urlsafe(48))")
 pronote-mcp-http
 ```
 
-Voir `docker-compose.yml` et `Caddyfile` pour un déploiement avec HTTPS automatique via Caddy.
+
 
 ## Variables d'environnement
 
