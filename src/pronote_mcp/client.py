@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
-import threading
 import time
 
 import pronotepy
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 _CACHE_TTL = 20 * 60
 
 _cached: tuple[pronotepy.Client, float] | None = None
-_cache_lock = threading.Lock()
+_cache_lock = asyncio.Lock()
 
 
 class PronoteConfigError(RuntimeError):
@@ -61,21 +61,21 @@ def _login() -> pronotepy.Client:
     return client
 
 
-def get_client() -> pronotepy.Client:
+async def get_client() -> pronotepy.Client:
     global _cached
 
-    with _cache_lock:
+    async with _cache_lock:
         if _cached is not None:
             client, ts = _cached
             if time.monotonic() - ts < _CACHE_TTL:
                 try:
-                    client.session_check()
+                    await asyncio.to_thread(client.session_check)
                     logger.info("Reusing cached Pronote session.")
                     return client
                 except Exception:
                     logger.info("Cached session invalid, re-logging in.")
                     _cached = None
 
-        client = _login()
+        client = await asyncio.to_thread(_login)
         _cached = (client, time.monotonic())
         return client
