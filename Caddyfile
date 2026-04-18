@@ -1,0 +1,44 @@
+# Caddy auto-provisions Let's Encrypt certificates.
+# DOMAIN must be a real domain pointing to this VPS (A/AAAA record).
+
+{$DOMAIN} {
+    encode gzip
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "no-referrer"
+        # Don't expose server software version
+        -Server
+    }
+
+    # Block common probe paths to reduce log noise
+    @blocked {
+        path /.env /.git/* /wp-admin/* /admin/* /phpmyadmin/*
+    }
+    respond @blocked 404
+
+    # Reverse-proxy everything to the MCP container.
+    # The bearer token check happens inside the app, not here.
+    reverse_proxy pronote-mcp:8765 {
+        # Don't pass real client IP via X-Forwarded-For without trust;
+        # uncomment if behind Cloudflare or another trusted proxy.
+        # trusted_proxies private_ranges
+
+        # Streamable HTTP can use long-lived connections
+        transport http {
+            read_timeout 300s
+            write_timeout 300s
+        }
+    }
+
+    # Log to stdout so `docker logs` shows access (without bodies/tokens).
+    log {
+        output stdout
+        format console
+        # Don't log Authorization headers
+        level INFO
+    }
+}

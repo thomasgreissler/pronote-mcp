@@ -1,0 +1,49 @@
+services:
+  pronote-mcp:
+    build: .
+    image: pronote-mcp:latest
+    container_name: pronote-mcp
+    restart: unless-stopped
+    expose:
+      - "8765"
+    environment:
+      MONLYCEE_USER: ${MONLYCEE_USER}
+      MONLYCEE_PASS: ${MONLYCEE_PASS}
+      PRONOTE_URL: ${PRONOTE_URL}
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN}
+      MCP_HTTP_HOST: 0.0.0.0   # OK because we're inside Docker network
+      MCP_HTTP_PORT: 8765
+    networks:
+      - pronote-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: pronote-mcp-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      DOMAIN: ${DOMAIN}
+    networks:
+      - pronote-net
+    depends_on:
+      - pronote-mcp
+
+networks:
+  pronote-net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
