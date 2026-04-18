@@ -4,7 +4,7 @@ Serveur qui connecte Claude Desktop à **Pronote** via l'ENT Monlycée Île-de-F
 
 ## Introduction
 
-J'ai longtemps été frustré que Pronote ne fournisse pas d'API publique. Après quelques recherches, j'ai trouvé **pronotepy**, une librairie qui a fait tout un travail pour rev Pronote. Néanmoins il n'existait pas de connecteur monlycee.net, l'ENT par lequel passe la connexion à pronote en IDF. Cette nouvelle librairie rend donc simple l'intégration de pronotepy à monlycée.net et le déploiement d'un serveur mcp pouvant être appelé par des LLMs comme Claude.
+J'ai longtemps été frustré que Pronote ne fournisse pas d'API publique. Après quelques recherches, j'ai trouvé **pronotepy**, une librairie qui a fait tout un travail pour reverse-engineer Pronote. Néanmoins il n'existait pas de connecteur monlycee.net, l'ENT par lequel passe la connexion à pronote en IDF. Cette nouvelle librairie rend donc simple l'intégration de pronotepy à monlycée.net et le déploiement d'un serveur mcp pouvant être appelé par des LLMs comme Claude.
 
 ## Fonctionnalités
 
