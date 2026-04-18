@@ -85,7 +85,7 @@ def _find_period(client, period_name: str | None):
 def register_tools(mcp: FastMCP) -> None:
 
     @mcp.tool(annotations={"title": "Get Pronote schedule", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True})
-    def pronote_get_schedule(
+    async def pronote_get_schedule(
         date_from: Annotated[str | None, Field(description="Start date (YYYY-MM-DD). Defaults to today.", examples=["2026-04-17"])] = None,
         date_to: Annotated[str | None, Field(description="End date inclusive (YYYY-MM-DD). Defaults to today + 7 days.")] = None,
         response_format: Annotated[ResponseFormat, Field(description="'markdown' (default) or 'json'.")] = "markdown",
@@ -101,7 +101,7 @@ def register_tools(mcp: FastMCP) -> None:
             if d_to < d_from:
                 return _error_response("date_to must be >= date_from")
 
-            client = get_client()
+            client = await get_client()
             lessons = _fetch_lessons(client, d_from, d_to)
             logger.info("Fetched %d lessons for %s..%s", len(lessons), d_from, d_to)
 
@@ -119,7 +119,7 @@ def register_tools(mcp: FastMCP) -> None:
             return _error_response(f"Internal error ({type(e).__name__}). Check server logs.")
 
     @mcp.tool(annotations={"title": "Get Pronote homework", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True})
-    def pronote_get_homework(
+    async def pronote_get_homework(
         date_from: Annotated[str | None, Field(description="Start date (YYYY-MM-DD). Defaults to today.")] = None,
         date_to: Annotated[str | None, Field(description="End date inclusive (YYYY-MM-DD). Defaults to today + 14 days.")] = None,
         only_pending: Annotated[bool, Field(description="If true, exclude homework already marked done. Defaults to true.")] = True,
@@ -136,7 +136,7 @@ def register_tools(mcp: FastMCP) -> None:
             if d_to < d_from:
                 return _error_response("date_to must be >= date_from")
 
-            client = get_client()
+            client = await get_client()
             hws = _fetch_homework(client, d_from, d_to, only_pending)
             logger.info("Fetched %d homework items (pending=%s)", len(hws), only_pending)
 
@@ -155,7 +155,7 @@ def register_tools(mcp: FastMCP) -> None:
             return _error_response(f"Internal error ({type(e).__name__}). Check server logs.")
 
     @mcp.tool(annotations={"title": "Get recent Pronote grades", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True})
-    def pronote_get_recent_grades(
+    async def pronote_get_recent_grades(
         limit: Annotated[int, Field(description="Maximum number of grades to return (most recent first).", ge=1, le=100)] = 10,
         subject_contains: Annotated[str | None, Field(description="Optional case-insensitive filter on the subject name (e.g. 'maths').")] = None,
         response_format: Annotated[ResponseFormat, Field(description="'markdown' (default) or 'json'.")] = "markdown",
@@ -166,7 +166,7 @@ def register_tools(mcp: FastMCP) -> None:
         teacher comment.
         """
         try:
-            client = get_client()
+            client = await get_client()
             grades = _fetch_all_grades(client, subject_contains)[:limit]
             logger.info("Fetched %d grades (filter=%r, limit=%d)", len(grades), subject_contains, limit)
 
@@ -182,7 +182,7 @@ def register_tools(mcp: FastMCP) -> None:
             return _error_response(f"Internal error ({type(e).__name__}). Check server logs.")
 
     @mcp.tool(annotations={"title": "Today's summary", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True})
-    def pronote_get_today_summary() -> str:
+    async def pronote_get_today_summary() -> str:
         """One-shot daily briefing: today's schedule, homework due today and tomorrow,
         and grades received in the last 7 days.
 
@@ -191,7 +191,7 @@ def register_tools(mcp: FastMCP) -> None:
         """
         try:
             today = date.today()
-            client = get_client()
+            client = await get_client()
             lessons = _fetch_lessons(client, today, today)
             homework = _fetch_homework(client, today, today + timedelta(days=1), only_pending=True)
             grades = _fetch_all_grades(client)
@@ -205,7 +205,7 @@ def register_tools(mcp: FastMCP) -> None:
             return _error_response(f"Internal error ({type(e).__name__}). Check server logs.")
 
     @mcp.tool(annotations={"title": "Get period averages", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True})
-    def pronote_get_period_averages(
+    async def pronote_get_period_averages(
         period_name: Annotated[str | None, Field(description="Period name (e.g. 'Trimestre 2'). Defaults to current period.", examples=["Trimestre 1", "Trimestre 2", "Semestre 1"])] = None,
         response_format: Annotated[ResponseFormat, Field(description="'markdown' (default) or 'json'.")] = "markdown",
     ) -> str | dict:
@@ -215,7 +215,7 @@ def register_tools(mcp: FastMCP) -> None:
         Defaults to the current period; pass period_name to query a past period.
         """
         try:
-            client = get_client()
+            client = await get_client()
             period = _find_period(client, period_name)
             if period is None:
                 return _error_response(
@@ -236,7 +236,7 @@ def register_tools(mcp: FastMCP) -> None:
             return _error_response(f"Internal error ({type(e).__name__}). Check server logs.")
 
     @mcp.tool(annotations={"title": "Get lesson content", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True})
-    def pronote_get_lesson_content(
+    async def pronote_get_lesson_content(
         lesson_date: Annotated[str, Field(description="Date of the lesson (YYYY-MM-DD).", examples=["2026-04-18"])],
         subject_contains: Annotated[str, Field(description="Case-insensitive substring to identify the subject.", examples=["maths", "français", "histoire"])],
         response_format: Annotated[ResponseFormat, Field(description="'markdown' (default) or 'json'.")] = "markdown",
@@ -248,7 +248,7 @@ def register_tools(mcp: FastMCP) -> None:
         """
         try:
             d = _parse_date(lesson_date, date.today())
-            client = get_client()
+            client = await get_client()
 
             needle = subject_contains.lower()
             matching = [
