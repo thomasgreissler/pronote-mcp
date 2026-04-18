@@ -65,7 +65,7 @@ conf: (`claude_desktop_config.json`) :
 }
 ```
 
-### Mode HTTP (APHA)
+### Mode HTTP (ALPHA)
 
 ```bash
 MCP_AUTH_TOKEN=$(python -c "import secrets; print(secrets.token_urlsafe(48))")
