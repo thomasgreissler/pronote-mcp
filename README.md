@@ -23,9 +23,11 @@ Six outils disponibles dans Claude :
 
 ## Installation
 
+```bash
+pip install pronote-mcp
+```
 
-Depuis les sources :
-
+Ou depuis les sources :
 ```bash
 git clone https://github.com/thomasgreissler/pronote-mcp
 cd pronote-mcp
