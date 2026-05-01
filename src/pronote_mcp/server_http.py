@@ -45,6 +45,8 @@ class BearerAuthMiddleware(BaseHTTPMiddleware):
         self._failures: dict[str, list[float]] = defaultdict(list)
 
     def _is_locked_out(self, ip: str) -> bool:
+        if ip not in self._failures:
+            return False
         now = time.monotonic()
         cutoff = now - _LOCKOUT_SECONDS
         recent = [t for t in self._failures[ip] if t > cutoff]
@@ -61,7 +63,12 @@ class BearerAuthMiddleware(BaseHTTPMiddleware):
         if request.url.path in self.EXEMPT_PATHS:
             return await call_next(request)
 
-        ip = request.client.host if request.client else "unknown"
+        ip = request.client.host if request.client else None
+        if ip is None:
+            return JSONResponse(
+                {"error": "Unable to determine client address"},
+                status_code=400,
+            )
 
         if self._is_locked_out(ip):
             logger.warning(
