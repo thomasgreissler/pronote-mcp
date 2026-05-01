@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 
 ResponseFormat = Literal["markdown", "json"]
 
+_MAX_DATE_RANGE_DAYS = 365
+
 
 def _parse_date(s: str | None, default: date) -> date:
     if not s:
@@ -100,6 +102,8 @@ def register_tools(mcp: FastMCP) -> None:
             d_to = _parse_date(date_to, date.today() + timedelta(days=7))
             if d_to < d_from:
                 return _error_response("date_to must be >= date_from")
+            if (d_to - d_from).days > _MAX_DATE_RANGE_DAYS:
+                return _error_response(f"Date range exceeds maximum of {_MAX_DATE_RANGE_DAYS} days.")
 
             client = await get_client()
             lessons = _fetch_lessons(client, d_from, d_to)
@@ -114,9 +118,9 @@ def register_tools(mcp: FastMCP) -> None:
             return _error_response(str(e))
         except ValueError as e:
             return _error_response(f"Invalid date format (expected YYYY-MM-DD): {e}")
-        except Exception as e:
+        except Exception:
             logger.exception("pronote_get_schedule failed")
-            return _error_response(f"Internal error ({type(e).__name__}). Check server logs.")
+            return _error_response("Internal error. Check server logs.")
 
     @mcp.tool(annotations={"title": "Get Pronote homework", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True})
     async def pronote_get_homework(
@@ -135,6 +139,8 @@ def register_tools(mcp: FastMCP) -> None:
             d_to = _parse_date(date_to, date.today() + timedelta(days=14))
             if d_to < d_from:
                 return _error_response("date_to must be >= date_from")
+            if (d_to - d_from).days > _MAX_DATE_RANGE_DAYS:
+                return _error_response(f"Date range exceeds maximum of {_MAX_DATE_RANGE_DAYS} days.")
 
             client = await get_client()
             hws = _fetch_homework(client, d_from, d_to, only_pending)
@@ -150,9 +156,9 @@ def register_tools(mcp: FastMCP) -> None:
             return _error_response(str(e))
         except ValueError as e:
             return _error_response(f"Invalid date format (expected YYYY-MM-DD): {e}")
-        except Exception as e:
+        except Exception:
             logger.exception("pronote_get_homework failed")
-            return _error_response(f"Internal error ({type(e).__name__}). Check server logs.")
+            return _error_response("Internal error. Check server logs.")
 
     @mcp.tool(annotations={"title": "Get recent Pronote grades", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True})
     async def pronote_get_recent_grades(
@@ -177,9 +183,9 @@ def register_tools(mcp: FastMCP) -> None:
 
         except (PronoteConfigError, PronoteAuthError) as e:
             return _error_response(str(e))
-        except Exception as e:
+        except Exception:
             logger.exception("pronote_get_recent_grades failed")
-            return _error_response(f"Internal error ({type(e).__name__}). Check server logs.")
+            return _error_response("Internal error. Check server logs.")
 
     @mcp.tool(annotations={"title": "Today's summary", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True})
     async def pronote_get_today_summary() -> str:
@@ -200,9 +206,9 @@ def register_tools(mcp: FastMCP) -> None:
 
         except (PronoteConfigError, PronoteAuthError) as e:
             return _error_response(str(e))
-        except Exception as e:
+        except Exception:
             logger.exception("pronote_get_today_summary failed")
-            return _error_response(f"Internal error ({type(e).__name__}). Check server logs.")
+            return _error_response("Internal error. Check server logs.")
 
     @mcp.tool(annotations={"title": "Get period averages", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True})
     async def pronote_get_period_averages(
@@ -231,9 +237,9 @@ def register_tools(mcp: FastMCP) -> None:
 
         except (PronoteConfigError, PronoteAuthError) as e:
             return _error_response(str(e))
-        except Exception as e:
+        except Exception:
             logger.exception("pronote_get_period_averages failed")
-            return _error_response(f"Internal error ({type(e).__name__}). Check server logs.")
+            return _error_response("Internal error. Check server logs.")
 
     @mcp.tool(annotations={"title": "Get lesson content", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True})
     async def pronote_get_lesson_content(
@@ -278,6 +284,6 @@ def register_tools(mcp: FastMCP) -> None:
             return _error_response(str(e))
         except ValueError as e:
             return _error_response(f"Invalid date format (expected YYYY-MM-DD): {e}")
-        except Exception as e:
+        except Exception:
             logger.exception("pronote_get_lesson_content failed")
-            return _error_response(f"Internal error ({type(e).__name__}). Check server logs.")
+            return _error_response("Internal error. Check server logs.")

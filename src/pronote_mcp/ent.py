@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -16,6 +16,10 @@ USER_AGENT = (
     "AppleWebKit/537.36 (KHTML, like Gecko) "
     "Chrome/131.0.0.0 Safari/537.36"
 )
+
+# Domains that are allowed to appear as a login form's action target.
+# Credentials must never be POSTed to any host outside this set.
+_TRUSTED_AUTH_DOMAINS = frozenset({"auth.monlycee.net", "psn.monlycee.net"})
 
 
 class ENTAuthError(RuntimeError):
@@ -43,6 +47,15 @@ def monlycee_ent(username: str, password: str, pronote_url: str, **_) -> Request
         if not form_action_url.startswith("http"):
             form_action_url = urljoin(r_initial.url, form_action_url)
 
+        # Guard against a manipulated page redirecting credentials to an
+        # attacker-controlled host (SSRF / credential-theft via MITM).
+        action_host = urlparse(form_action_url).netloc
+        if action_host not in _TRUSTED_AUTH_DOMAINS:
+            raise ENTAuthError(
+                f"Login form action points to untrusted host '{action_host}'. "
+                "Possible MITM — aborting authentication."
+            )
+
         form_data = {
             tag.get("name"): tag.get("value", "")
             for tag in form.find_all("input")
@@ -60,6 +73,12 @@ def monlycee_ent(username: str, password: str, pronote_url: str, **_) -> Request
         )
         if not r_login.ok:
             raise ENTAuthError("Monlycée login rejected.")
+
+        # A successful SSO login must redirect away from the auth page.
+        # If the final URL is still on the auth domain, the credentials were
+        # rejected even though the server returned HTTP 200.
+        if urlparse(r_login.url).netloc == "auth.monlycee.net":
+            raise ENTAuthError("Monlycée login failed (still on authentication page after POST).")
 
         r_pronote = s.get(pronote_url, allow_redirects=True, timeout=DEFAULT_TIMEOUT)
         if not r_pronote.ok:
